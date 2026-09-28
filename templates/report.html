@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NetLens-Recon Dashboard</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfeff',
+              100: '#cffafe',
+              400: '#22d3ee',
+              500: '#06b6d4',
+              600: '#0891b2',
+              900: '#164e63',
+              950: '#083344'
+            },
+            dark: {
+              bg: '#090d16',
+              card: '#0f172a',
+              border: '#1e293b',
+              hover: '#1e293b'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #090d16;
+      color: #f1f5f9;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .glass {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-card {
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(8px);
+      border: 1px solid #1e293b;
+      transition: all 0.2s ease-in-out;
+    }
+    .glass-card:hover {
+      border-color: #06b6d4;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px -5px rgba(6, 182, 212, 0.15);
+    }
+    .hvt-glow {
+      box-shadow: 0 0 15px rgba(239, 68, 68, 0.35);
+      border-color: rgba(239, 68, 68, 0.6) !important;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090d16;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-cyan-500 selection:text-black">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-40 glass border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 text-white font-bold text-xl">
+          🛡️
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+              NetLens<span class="text-cyan-400">Recon</span>
+            </h1>
+            <span class="px-2 py-0.5 text-xs font-semibold rounded bg-cyan-950 text-cyan-300 border border-cyan-800">
+              v1.0.0
+            </span>
+          </div>
+          <p class="text-xs text-slate-400">Automated Attack Surface & Visual Reconnaissance Engine</p>
+        </div>
+      </div>
+
+      <!-- Author & Meta Info -->
+      <div class="flex items-center gap-4 text-xs">
+        <div class="hidden md:flex flex-col text-right">
+          <span class="text-slate-300 font-medium">Farhad Jelve</span>
+          <span class="text-slate-500 text-[11px]">CCNP Enterprise • CCNA • B.Sc. EE KTH</span>
+        </div>
+        <div class="h-8 w-px bg-slate-800 hidden md:block"></div>
+        <div class="flex items-center space-x-2">
+          <button id="exportJsonBtn" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium flex items-center gap-1.5 transition">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            Export JSON
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- KPI Metric Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <!-- Total Scanned -->
+      <div class="glass-card rounded-xl p-4">
+        <div class="flex items-center justify-between text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">
+          <span>Targets Scanned</span>
+          <span class="text-cyan-400">🌐</span>
+        </div>
+        <div class="text-2xl font-bold text-white mono" id="kpiTotal">{{ summary.endpoints_scanned }}</div>
+        <div class="text-xs text-slate-500 mt-1">From {{ summary.total_targets_supplied }} initial candidates</div>
+      </div>
+
+      <!-- 200 OK / Responsive -->
+      <div class="glass-card rounded-xl p-4">
+        <div class="flex items-center justify-between text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">
+          <span>Live / 200 OK</span>
+          <span class="text-emerald-400">✓</span>
+        </div>
+        <div class="text-2xl font-bold text-emerald-400 mono" id="kpi200">
+          {{ summary.status_distribution.get('200', 0) }}
+        </div>
+        <div class="text-xs text-slate-500 mt-1">Active responding web services</div>
+      </div>
+
+      <!-- High-Value Targets -->
+      <div class="glass-card rounded-xl p-4 {{ 'hvt-glow' if summary.high_value_targets_count > 0 else '' }}">
+        <div class="flex items-center justify-between text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">
+          <span>High-Value Targets</span>
+          <span class="text-rose-400">🚨</span>
+        </div>
+        <div class="text-2xl font-bold text-rose-400 mono" id="kpiHvt">
+          {{ summary.high_value_targets_count }}
+        </div>
+        <div class="text-xs text-rose-400/80 mt-1 font-medium">Logins, Admin, Cisco, APIs</div>
+      </div>
+
+      <!-- Unique Visual Surfaces -->
+      <div class="glass-card rounded-xl p-4">
+        <div class="flex items-center justify-between text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">
+          <span>Visual Clusters</span>
+          <span class="text-purple-400">🖼️</span>
+        </div>
+        <div class="text-2xl font-bold text-purple-400 mono" id="kpiClusters">
+          {{ summary.unique_visual_clusters }}
+        </div>
+        <div class="text-xs text-slate-500 mt-1">Deduplicated perceptual dHash groups</div>
+      </div>
+    </div>
+
+    <!-- Filters & Search Toolbar -->
+    <div class="glass rounded-xl p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+      <!-- Search Input -->
+      <div class="relative flex-1">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </div>
+        <input 
+          type="text" 
+          id="searchInput" 
+          placeholder="Search by URL, title, IP, tech stack, or HVT flag..." 
+          class="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-700 focus:border-cyan-500 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none transition"
+        >
+      </div>
+
+      <!-- Quick Filter Pills -->
+      <div class="flex flex-wrap items-center gap-2">
+        <button data-filter="all" class="filter-pill active px-3 py-1.5 rounded-lg text-xs font-medium bg-cyan-600 text-white transition">
+          All (<span id="countAll">0</span>)
+        </button>
+        <button data-filter="hvt" class="filter-pill px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-rose-400 border border-rose-900/40 hover:bg-rose-950 transition flex items-center gap-1">
+          <span>🚨 HVTs</span> (<span id="countHvt">0</span>)
+        </button>
+        <button data-filter="unique" class="filter-pill px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-purple-300 border border-purple-900/40 hover:bg-purple-950 transition flex items-center gap-1">
+          <span>🖼️ Unique Only</span> (<span id="countUnique">0</span>)
+        </button>
+        <button data-filter="200" class="filter-pill px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-emerald-400 border border-emerald-900/40 hover:bg-emerald-950 transition">
+          200 OK (<span id="count200">0</span>)
+        </button>
+      </div>
+    </div>
+
+    <!-- Live Counter and Layout State -->
+    <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+      <div>
+        Showing <span id="visibleCount" class="font-bold text-white">0</span> of <span id="totalItemsCount" class="font-bold text-white">0</span> endpoints
+      </div>
+      <div class="text-slate-500">
+        Scan timestamp: <span class="mono text-slate-400">{{ summary.scan_timestamp }}</span> • Completed in <span class="mono text-cyan-400">{{ "%.2f"|format(summary.duration_seconds) }}s</span>
+      </div>
+    </div>
+
+    <!-- Grid of Target Recon Cards -->
+    <div id="resultsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Target cards rendered dynamically or from initial template -->
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="hidden text-center py-16">
+      <div class="text-4xl mb-3">🔍</div>
+      <h3 class="text-lg font-bold text-slate-300">No matching endpoints found</h3>
+      <p class="text-xs text-slate-500 mt-1">Try adjusting your search query or active filters.</p>
+    </div>
+
+  </main>
+
+  <!-- Fullscreen Screenshot & Details Lightbox Modal -->
+  <div id="lightboxModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-5xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+        <div class="flex items-center space-x-3 overflow-hidden">
+          <span id="modalStatusBadge" class="px-2.5 py-1 text-xs font-bold rounded mono"></span>
+          <h3 id="modalUrl" class="text-base font-bold text-white mono truncate"></h3>
+          <a id="modalExternalLink" href="#" target="_blank" rel="noopener noreferrer" class="text-cyan-400 hover:text-cyan-300 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+          </a>
+        </div>
+        <button id="modalCloseBtn" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="flex-1 overflow-y-auto p-6 space-y-6">
+        <!-- Full Image Preview -->
+        <div class="bg-black/50 border border-slate-800 rounded-xl overflow-hidden flex items-center justify-center p-2">
+          <img id="modalImage" src="" alt="Screenshot" class="max-w-full max-h-[55vh] object-contain rounded-lg">
+        </div>
+
+        <!-- Details Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          <div class="space-y-3 bg-slate-950/40 p-4 rounded-xl border border-slate-800">
+            <div>
+              <span class="text-slate-500 uppercase tracking-wider font-semibold">Page Title</span>
+              <p id="modalTitle" class="text-slate-200 font-medium mt-0.5 text-sm"></p>
+            </div>
+            <div>
+              <span class="text-slate-500 uppercase tracking-wider font-semibold">Resolved IP & Port</span>
+              <p id="modalIpPort" class="text-cyan-400 mono mt-0.5"></p>
+            </div>
+            <div>
+              <span class="text-slate-500 uppercase tracking-wider font-semibold">Latency</span>
+              <p id="modalLatency" class="text-slate-300 mono mt-0.5"></p>
+            </div>
+            <div>
+              <span class="text-slate-500 uppercase tracking-wider font-semibold">Perceptual dHash</span>
+              <p id="modalDhash" class="text-purple-400 mono mt-0.5 text-[11px]"></p>
+            </div>
+          </div>
+
+          <div class="space-y-3 bg-slate-950/40 p-4 rounded-xl border border-slate-800">
+            <div>
+              <span class="text-slate-500 uppercase tracking-wider font-semibold">High-Value Target Flags</span>
+              <div id="modalHvtFlags" class="flex flex-wrap gap-1.5 mt-1.5"></div>
+            </div>
+            <div>
+              <span class="text-slate-500 uppercase tracking-wider font-semibold">Detected Tech Stack</span>
+              <div id="modalTechStack" class="flex flex-wrap gap-1.5 mt-1.5"></div>
+            </div>
+            <div>
+              <span class="text-slate-500 uppercase tracking-wider font-semibold">Redirect Chain</span>
+              <div id="modalRedirects" class="text-slate-400 mono mt-1 text-[11px]"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Response Headers -->
+        <div class="bg-slate-950/40 p-4 rounded-xl border border-slate-800">
+          <span class="text-slate-500 uppercase tracking-wider font-semibold text-xs mb-2 block">HTTP Response Headers</span>
+          <div id="modalHeaders" class="max-h-40 overflow-y-auto mono text-[11px] text-slate-300 space-y-1 bg-slate-900/80 p-3 rounded-lg border border-slate-800/80">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Embedded Data Payload for Client-Side Filtering -->
+  <script id="rawScanData" type="application/json">
+    {{ results_json | safe }}
+  </script>
+
+  <script>
+    // Application Logic & Dynamic Filtering
+    let scanResults = [];
+    try {
+      scanResults = JSON.parse(document.getElementById('rawScanData').textContent);
+    } catch(e) {
+      console.error("Failed to parse scan data:", e);
+    }
+
+    let activeFilter = 'all';
+    let searchQuery = '';
+
+    const resultsGrid = document.getElementById('resultsGrid');
+    const emptyState = document.getElementById('emptyState');
+    const searchInput = document.getElementById('searchInput');
+    const visibleCount = document.getElementById('visibleCount');
+    const totalItemsCount = document.getElementById('totalItemsCount');
+
+    // Counts
+    const countAll = document.getElementById('countAll');
+    const countHvt = document.getElementById('countHvt');
+    const countUnique = document.getElementById('countUnique');
+    const count200 = document.getElementById('count200');
+
+    // Lightbox modal elements
+    const lightboxModal = document.getElementById('lightboxModal');
+    const modalCloseBtn = document.getElementById('modalCloseBtn');
+    const modalImage = document.getElementById('modalImage');
+    const modalUrl = document.getElementById('modalUrl');
+    const modalExternalLink = document.getElementById('modalExternalLink');
+    const modalStatusBadge = document.getElementById('modalStatusBadge');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalIpPort = document.getElementById('modalIpPort');
+    const modalLatency = document.getElementById('modalLatency');
+    const modalDhash = document.getElementById('modalDhash');
+    const modalHvtFlags = document.getElementById('modalHvtFlags');
+    const modalTechStack = document.getElementById('modalTechStack');
+    const modalRedirects = document.getElementById('modalRedirects');
+    const modalHeaders = document.getElementById('modalHeaders');
+
+    function updateCounts() {
+      totalItemsCount.textContent = scanResults.length;
+      countAll.textContent = scanResults.length;
+      countHvt.textContent = scanResults.filter(r => r.is_hvt).length;
+      countUnique.textContent = scanResults.filter(r => r.is_cluster_rep).length;
+      count200.textContent = scanResults.filter(r => r.status_code === 200).length;
+    }
+
+    function getStatusBadge(code) {
+      if (!code) return `<span class="px-2 py-0.5 rounded text-xs mono bg-slate-800 text-slate-400">ERR</span>`;
+      if (code >= 200 && code < 300) {
+        return `<span class="px-2 py-0.5 rounded text-xs mono font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">${code} OK</span>`;
+      }
+      if (code >= 300 && code < 400) {
+        return `<span class="px-2 py-0.5 rounded text-xs mono font-bold bg-blue-950 text-blue-400 border border-blue-800">${code} REDIR</span>`;
+      }
+      if (code >= 400 && code < 500) {
+        return `<span class="px-2 py-0.5 rounded text-xs mono font-bold bg-amber-950 text-amber-400 border border-amber-800">${code}</span>`;
+      }
+      return `<span class="px-2 py-0.5 rounded text-xs mono font-bold bg-rose-950 text-rose-400 border border-rose-800">${code}</span>`;
+    }
+
+    function renderCards() {
+      resultsGrid.innerHTML = '';
+      const q = searchQuery.toLowerCase().trim();
+
+      const filtered = scanResults.filter(item => {
+        // Quick filter
+        if (activeFilter === 'hvt' && !item.is_hvt) return false;
+        if (activeFilter === 'unique' && !item.is_cluster_rep) return false;
+        if (activeFilter === '200' && item.status_code !== 200) return false;
+
+        // Search filter
+        if (q) {
+          const matchUrl = (item.url || '').toLowerCase().includes(q);
+          const matchTitle = (item.page_title || '').toLowerCase().includes(q);
+          const matchIp = (item.resolved_ip || '').toLowerCase().includes(q);
+          const matchTech = (item.technologies || []).some(t => t.toLowerCase().includes(q));
+          const matchHvt = (item.hvt_flags || []).some(f => f.toLowerCase().includes(q));
+          const matchStatus = String(item.status_code || '').includes(q);
+          return matchUrl || matchTitle || matchIp || matchTech || matchHvt || matchStatus;
+        }
+        return true;
+      });
+
+      visibleCount.textContent = filtered.length;
+
+      if (filtered.length === 0) {
+        emptyState.classList.remove('hidden');
+        return;
+      } else {
+        emptyState.classList.add('hidden');
+      }
+
+      filtered.forEach((item, index) => {
+        const card = document.createElement('div');
+        const isHvtClass = item.is_hvt ? 'hvt-glow ring-1 ring-rose-500/50' : '';
+        card.className = `glass-card rounded-xl overflow-hidden flex flex-col cursor-pointer ${isHvtClass}`;
+
+        const screenshotSrc = item.screenshot_path || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="375" viewBox="0 0 600 375"><rect width="100%" height="100%" fill="%230f172a"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23475569" font-family="sans-serif" font-size="16">No Screenshot Captured</text></svg>';
+
+        let hvtBadgesHtml = '';
+        if (item.hvt_flags && item.hvt_flags.length > 0) {
+          hvtBadgesHtml = item.hvt_flags.map(flag => 
+            `<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-rose-950 text-rose-300 border border-rose-800">🚨 ${flag.replace('_', ' ')}</span>`
+          ).join('');
+        }
+
+        let techBadgesHtml = '';
+        if (item.technologies && item.technologies.length > 0) {
+          techBadgesHtml = item.technologies.map(t => 
+            `<span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 text-slate-300 border border-slate-700">${t}</span>`
+          ).join('');
+        }
+
+        let clusterBadge = '';
+        if (item.cluster_id) {
+          clusterBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-purple-950/80 text-purple-300 border border-purple-800" title="Visual Cluster ID">#C${item.cluster_id} (${item.cluster_size})</span>`;
+        }
+
+        card.innerHTML = `
+          <!-- Screenshot Preview -->
+          <div class="relative aspect-video w-full bg-slate-950 overflow-hidden border-b border-slate-800">
+            <img src="${screenshotSrc}" alt="${item.url}" loading="lazy" class="w-full h-full object-cover object-top hover:scale-105 transition duration-300">
+            <div class="absolute top-2.5 left-2.5 flex items-center space-x-1.5">
+              ${getStatusBadge(item.status_code)}
+              ${clusterBadge}
+            </div>
+            <div class="absolute top-2.5 right-2.5">
+              <span class="px-1.5 py-0.5 rounded text-[10px] mono bg-black/75 text-slate-400 border border-slate-800">${item.response_time_ms}ms</span>
+            </div>
+          </div>
+
+          <!-- Card Content -->
+          <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
+            <div>
+              <div class="flex items-center justify-between gap-2">
+                <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="font-bold text-sm text-cyan-400 hover:underline mono truncate block" onclick="event.stopPropagation()">
+                  ${item.url}
+                </a>
+              </div>
+              <h4 class="text-xs text-slate-200 font-medium line-clamp-1 mt-1" title="${item.page_title || 'Untitled'}">
+                ${item.page_title || '<span class="text-slate-500 italic">No Title</span>'}
+              </h4>
+              <div class="text-[11px] text-slate-500 mono mt-0.5">
+                ${item.resolved_ip || 'No IP'} • Port ${item.target_port}
+              </div>
+            </div>
+
+            <!-- Tags / HVT Section -->
+            <div class="space-y-2 pt-2 border-t border-slate-800/80">
+              ${hvtBadgesHtml ? `<div class="flex flex-wrap gap-1">${hvtBadgesHtml}</div>` : ''}
+              ${techBadgesHtml ? `<div class="flex flex-wrap gap-1">${techBadgesHtml}</div>` : ''}
+            </div>
+          </div>
+        `;
+
+        card.addEventListener('click', () => openModal(item));
+        resultsGrid.appendChild(card);
+      });
+    }
+
+    function openModal(item) {
+      modalUrl.textContent = item.url;
+      modalExternalLink.href = item.url;
+      modalImage.src = item.screenshot_path || '';
+      modalTitle.textContent = item.page_title || 'No title tag found';
+      modalIpPort.textContent = `${item.resolved_ip || 'N/A'}:${item.target_port} (${item.scheme.toUpperCase()})`;
+      modalLatency.textContent = `${item.response_time_ms} ms`;
+      modalDhash.textContent = item.dhash ? `dHash: ${item.dhash}` : 'No visual hash';
+
+      // Status Badge
+      modalStatusBadge.innerHTML = getStatusBadge(item.status_code);
+
+      // HVT Flags
+      modalHvtFlags.innerHTML = '';
+      if (item.hvt_flags && item.hvt_flags.length > 0) {
+        item.hvt_flags.forEach(flag => {
+          const sp = document.createElement('span');
+          sp.className = 'px-2 py-0.5 rounded text-[11px] font-bold uppercase bg-rose-950 text-rose-300 border border-rose-800';
+          sp.textContent = `🚨 ${flag}`;
+          modalHvtFlags.appendChild(sp);
+        });
+      } else {
+        modalHvtFlags.innerHTML = '<span class="text-slate-500 italic">No HVT flags triggered</span>';
+      }
+
+      // Tech Stack
+      modalTechStack.innerHTML = '';
+      if (item.technologies && item.technologies.length > 0) {
+        item.technologies.forEach(tech => {
+          const sp = document.createElement('span');
+          sp.className = 'px-2 py-0.5 rounded text-[11px] font-medium bg-slate-800 text-slate-200 border border-slate-700';
+          sp.textContent = tech;
+          modalTechStack.appendChild(sp);
+        });
+      } else {
+        modalTechStack.innerHTML = '<span class="text-slate-500 italic">Standard or unknown stack</span>';
+      }
+
+      // Redirects
+      modalRedirects.innerHTML = '';
+      if (item.redirect_chain && item.redirect_chain.length > 0) {
+        modalRedirects.innerHTML = item.redirect_chain.map(u => `<div>↳ ${u}</div>`).join('');
+      } else {
+        modalRedirects.innerHTML = '<span class="text-slate-500 italic">Direct connection (no redirects)</span>';
+      }
+
+      // Headers
+      modalHeaders.innerHTML = '';
+      if (item.response_headers && Object.keys(item.response_headers).length > 0) {
+        for (const [k, v] of Object.entries(item.response_headers)) {
+          const row = document.createElement('div');
+          row.className = 'flex';
+          row.innerHTML = `<span class="text-cyan-400 font-semibold w-1/3 truncate">${k}:</span> <span class="text-slate-300 w-2/3 truncate" title="${v}">${v}</span>`;
+          modalHeaders.appendChild(row);
+        }
+      } else {
+        modalHeaders.innerHTML = '<span class="text-slate-500 italic">No response headers recorded</span>';
+      }
+
+      lightboxModal.classList.remove('hidden');
+    }
+
+    function closeModal() {
+      lightboxModal.classList.add('hidden');
+    }
+
+    modalCloseBtn.addEventListener('click', closeModal);
+    lightboxModal.addEventListener('click', (e) => {
+      if (e.target === lightboxModal) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !lightboxModal.classList.contains('hidden')) {
+        closeModal();
+      }
+    });
+
+    // Filter pill click handling
+    document.querySelectorAll('.filter-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-pill').forEach(b => {
+          b.classList.remove('active', 'bg-cyan-600', 'text-white');
+          b.classList.add('bg-slate-800');
+        });
+        btn.classList.add('active', 'bg-cyan-600', 'text-white');
+        btn.classList.remove('bg-slate-800');
+        activeFilter = btn.dataset.filter;
+        renderCards();
+      });
+    });
+
+    // Search input
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value;
+      renderCards();
+    });
+
+    // Export JSON Button
+    document.getElementById('exportJsonBtn').addEventListener('click', () => {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(scanResults, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `netlens_recon_export_${Date.now()}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    });
+
+    // Initial render
+    updateCounts();
+    renderCards();
+  </script>
+</body>
+</html>

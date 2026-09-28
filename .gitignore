@@ -12,3 +12,4 @@ screenshots/
 .DS_Store
 .idea/
 .vscode/
+.pytest_cache/
