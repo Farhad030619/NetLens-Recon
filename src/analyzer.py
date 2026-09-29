@@ -65,8 +65,8 @@ HVT_SIGNATURES = [
     ("SWAGGER_API", [r"swagger", r"openapi", r"api documentation", r"api explorer"]),
     ("SPRING_ACTUATOR", [r"actuator", r"whitelabel error page"]),
     ("KUBERNETES_DOCKER", [r"kubernetes dashboard", r"portainer", r"rancher", r"docker registry"]),
-    ("NETWORK_APPLIANCE", [r"pfsense", r"fortigate", r"mikrotik", r"ubiquiti", r"unifi", r"synology", r"idrac", r"ilo", r"openwrt"]),
-    ("IDENTITY_PROVIDER", [r"keycloak", r"okta", r"auth0", r"azure active directory", r"shibboleth"]),
+    ("NETWORK_APPLIANCE", [r"pfsense", r"fortigate", r"mikrotik", r"ubiquiti", r"unifi", r"synology", r"\bidrac\b", r"\bilo\b", r"openwrt"]),
+    ("IDENTITY_PROVIDER", [r"keycloak", r"\bokta\b", r"auth0", r"azure active directory", r"shibboleth"]),
     ("DATABASE_ADMIN", [r"adminer", r"pgadmin", r"mongo express", r"redis commander"]),
     ("MONITORING", [r"kibana", r"zabbix", r"prometheus", r"nagios", r"prtg", r"checkmk"]),
 ]
